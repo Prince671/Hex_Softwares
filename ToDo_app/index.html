@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attractive To-Do List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .loader {
+            width: 100px;
+            height: 100px;
+            border: 10px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 10px solid #764ba2;
+            animation: spin 2s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #764ba2;
+        }
+
+        .add-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .add-btn:hover {
+            background: #764ba2;
+        }
+
+        ul {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        ul li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s, transform 0.2s;
+            position: relative;
+        }
+
+        ul li.completed {
+            background-color: #d4edda;
+            text-decoration: line-through;
+            color: #155724;
+        }
+
+        ul li:hover {
+            transform: translateX(5px);
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .complete-btn,
+        .remove-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .complete-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            transition: opacity 1s;
+        }
+
+        /* Warning message */
+        .warning {
+            font-size: 0.8rem;
+            color: red;
+            position: absolute;
+            top: -20px;
+            right: 0;
+        }
+
+        /* Animation for moving the task off the screen */
+        @keyframes slideOffScreen {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(-100vh);
+            }
+        }
+
+        /* Animation for bringing the task back onto the screen */
+        @keyframes slideBackOnScreen {
+            0% {
+                transform: translateY(-100vh);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* Class for the off-screen effect */
+        .slide-off {
+            animation: slideOffScreen 0.5s forwards;
+        }
+
+        /* Class for the on-screen effect */
+        .slide-back {
+            animation: slideBackOnScreen 0.5s forwards;
+        }
+
+        /* Trash can animation */
+        @keyframes throwInDustbin {
+            0% {
+                transform: translateX(0) rotate(0);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translateX(100px) rotate(30deg);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: translateX(300px) rotate(90deg);
+                opacity: 0;
+            }
+        }
+
+        .dustbin-animation {
+            animation: throwInDustbin 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loader"></div> <!-- Loading animation -->
+
+    <div class="container" style="display: none;">
+        <h1>To-Do List</h1>
+        <input type="text" id="taskInput" placeholder="Add a new task...">
+        <button class="add-btn" onclick="addTask()">Add Task</button>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelector('.loader').style.display = 'none'; // Hide loader
+                document.querySelector('.container').style.display = 'block'; // Show main content
+                loadTasks();
+            }, 2000); // Simulate a 2-second loading delay
+        });
+
+        // Add task on pressing 'Enter' key
+        document.getElementById('taskInput').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        function loadTasks() {
+            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.forEach(task => {
+                createTaskElement(task.text, task.completed);
+            });
+        }
+
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const taskText = taskInput.value.trim();
+            if (taskText) {
+                createAnimatedTask(taskText);
+                taskInput.value = '';
+            }
+        }
+
+        function createAnimatedTask(taskText) {
+            const tempLi = document.createElement('li');
+            tempLi.textContent = taskText;
+            tempLi.classList.add('slide-off');
+            document.body.appendChild(tempLi);
+
+            // Delay to simulate off-screen pinning
+            setTimeout(() => {
+                tempLi.remove(); // Remove the temporary li element
+                createTaskElement(taskText, false); // Add it properly to the task list
+            }, 500); // Duration matches the animation
+        }
+
+        function createTaskElement(taskText, isCompleted) {
+            const taskList = document.getElementById('taskList');
+            const li = document.createElement('li');
+            li.classList.toggle('completed', isCompleted);
+
+            const span = document.createElement('span');
+            span.textContent = taskText;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.classList.add('actions');
+
+            const completeBtn = document.createElement('button');
+            completeBtn.classList.add('complete-btn');
+            completeBtn.textContent = 'Complete';
+            completeBtn.onclick = () => toggleTaskComplete(li, span, completeBtn);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.classList.add('remove-btn');
+            removeBtn.textContent = 'Remove';
+            removeBtn.onclick = () => removeTask(li, taskText);
+
+            actionsDiv.appendChild(completeBtn);
+            actionsDiv.appendChild(removeBtn);
+
+            li.appendChild(span);
+            li.appendChild(actionsDiv);
+
+            li.classList.add('slide-back'); // Bring the task onto the screen with animation
+            taskList.appendChild(li);
+        }
+
+        function toggleTaskComplete(li, span, completeBtn) {
+            li.classList.toggle('completed');
+            completeBtn.textContent = li.classList.contains('completed') ? 'Completed' : 'Complete';
+
+            if (li.classList.contains('completed')) {
+                const removeBtn = li.querySelector('.remove-btn');
+                removeBtn.disabled = true; // Disable the remove button
+                setTimeout(() => {
+                    removeBtn.style.opacity = '0'; // Disappear the remove button
+                }, 1000); // Delay the disappearance for 1 second
+
+                const warning = document.createElement('div');
+                warning.classList.add('warning');
+                warning.textContent = 'This task will disappear after 5 seconds';
+                li.appendChild(warning);
+
+                setTimeout(() => {
+                    if (li.classList.contains('completed')) {
+                        li.remove();
+                    }
+                }, 5000);
+            }
+
+            updateTask(span.textContent, li.classList.contains('completed'));
+        }
+
+        function removeTask(li, taskText) {
+            li.classList.add('dustbin-animation');
+            setTimeout(() => {
+                li.remove();
+                const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                const updatedTasks = tasks.filter(task => task.text !== taskText);
+                localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+            }, 1000); 
+        }
+
+        function saveTask(taskText, isCompleted) {
+            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.push({ text: taskText, completed: isCompleted });
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function updateTask(taskText, isCompleted) {
+            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            const taskIndex = tasks.findIndex(task => task.text === taskText);
+            if (taskIndex > -1) {
+                tasks[taskIndex].completed = isCompleted;
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+        }
+    </script>
+</body>
+
+</html>
